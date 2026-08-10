@@ -88,6 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--remove-policy", dest="remove_repo_policy_path", help="Remove a repository policy")
     parser.add_argument("--policy-profile", dest="policy_profile_name", help="Profile required by the repository policy")
     parser.add_argument("--list-policies", action="store_true", help="List saved repository policies")
+    parser.add_argument("--interactive", action="store_true", help="Show the interactive menu")
     parser.add_argument("--config", dest="config_path", help="Path to the config file")
     parser.add_argument("--scope", choices=["local", "global", "system"], default="local", help="Git scope for the identity update")
     parser.add_argument("--git-dir", dest="git_dir", help="Path to the repository where Git identity should be updated")
@@ -154,9 +155,17 @@ def main() -> int:
         return 0
 
     if not any([args.switch_profile_name, args.list_profiles, args.add_profile_name, args.repo_policy_path, args.remove_repo_policy_path, args.list_policies]):
+        config = load_config(config_path)
+        active_profile = config.get("active_profile")
+        if active_profile and not args.interactive:
+            apply_active_profile_to_current_repo(config_path=config_path)
+            return 0
+
         apply_active_profile_to_current_repo(config_path=config_path)
         options = ["Show current profile", "List profiles", "Switch profile", "Add profile", "Add repo policy", "Remove repo policy", "List repo policies"]
         selection = prompt_menu(options)
+        if selection is None:
+            return 0
 
         if selection == "Show current profile":
             active = get_active_profile(config_path)
@@ -176,6 +185,8 @@ def main() -> int:
                 print("No profiles configured yet.")
                 return 0
             selected_name = prompt_menu([profile["name"] for profile in profiles])
+            if selected_name is None:
+                return 0
             switch_profile(selected_name, config_path=config_path)
             print(f"Switched to profile '{selected_name}'.")
             return 0

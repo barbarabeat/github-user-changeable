@@ -32,17 +32,16 @@ def render_box(lines: List[str]) -> None:
     print(f"{Style.OKCYAN}└{'─' * width}┘{Style.ENDC}")
 
 
-def prompt_menu(options: list[str]) -> str:
-    """Render a simple interactive menu and return the selected option."""
+def prompt_menu(options: list[str]) -> str | None:
+    """Render a simple interactive menu and return the selected option or None to exit."""
     render_header("GitHub User Switcher")
     render_box(["Choose an action:"] + [f"{index}. {option}" for index, option in enumerate(options, start=1)])
 
-    while True:
-        try:
-            choice = input(f"{Style.BOLD}Select an option: {Style.ENDC}").strip()
-            index = int(choice) - 1
-            if 0 <= index < len(options):
-                return options[index]
-        except ValueError:
-            pass
-        print(f"{Style.WARNING}Please select a valid option.{Style.ENDC}")
+    choice = input(f"{Style.BOLD}Select an option: {Style.ENDC}").strip()
+    try:
+        index = int(choice) - 1
+    except ValueError:
+        return None
+    if 0 <= index < len(options):
+        return options[index]
+    return None

@@ -22,8 +22,10 @@ pip install -e .
 Run the interactive menu:
 
 ```bash
-git-my-user
+git-my-user --interactive
 ```
+
+Run without arguments to validate the active profile silently. If the active profile is valid for the current repository and there is no repository policy violation, the command exits without showing the menu.
 
 The menu lists the available actions and lets you choose them with a numbered option. It now uses a more visual terminal panel with headers and boxed sections, similar to a lightweight application interface.
 

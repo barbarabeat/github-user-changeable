@@ -1,3 +1,4 @@
+import argparse
 import copy
 import json
 import os
@@ -11,6 +12,7 @@ from github_user_changeable.config import (
     add_profile,
     add_repo_policy,
     ensure_repo_policy,
+    get_active_profile,
     list_profiles,
     list_repo_policies,
     load_config,
@@ -233,6 +235,57 @@ def test_prompt_menu_returns_selected_option(monkeypatch: pytest.MonkeyPatch) ->
     selected = prompt_menu(["Show profile", "List profiles", "Switch profile"])
 
     assert selected == "Switch profile"
+
+
+def test_prompt_menu_returns_none_for_invalid_choice(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("builtins.input", lambda _: "0")
+
+    selected = prompt_menu(["Show profile", "List profiles", "Switch profile"])
+
+    assert selected is None
+
+
+def test_main_valid_profile_does_not_show_menu(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    config_path = tmp_path / "config.json"
+    write_config(config_path, default_config(active_profile="personal"))
+
+    monkeypatch.setattr("github_user_changeable.cli.load_config", lambda config_path=None: load_config(config_path))
+    called = {"apply": False, "menu": False}
+
+    def fake_apply(config_path=None):
+        called["apply"] = True
+
+    def fake_menu(options):
+        called["menu"] = True
+        return None
+
+    monkeypatch.setattr("github_user_changeable.cli.apply_active_profile_to_current_repo", fake_apply)
+    monkeypatch.setattr("github_user_changeable.cli.prompt_menu", fake_menu)
+
+    monkeypatch.setattr("github_user_changeable.cli.argparse.ArgumentParser.parse_args", lambda self=None: argparse.Namespace(
+        switch_profile_name=None,
+        list_profiles=False,
+        add_profile_name=None,
+        github_user=None,
+        profile_name_value=None,
+        profile_email=None,
+        repo_policy_path=None,
+        remove_repo_policy_path=None,
+        policy_profile_name=None,
+        list_policies=False,
+        interactive=False,
+        config_path=str(config_path),
+        scope="local",
+        git_dir=None,
+    ))
+
+    from github_user_changeable.cli import main
+
+    result = main()
+
+    assert result == 0
+    assert called["apply"]
+    assert not called["menu"]
 
 
 def test_switch_profile_attempts_github_cli_sync(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
