@@ -4,20 +4,20 @@ This project provides a small installable CLI to switch between GitHub identitie
 
 The command-line interface is organized into focused modules for configuration, Git/GitHub integration, and the interactive terminal UI.
 
-## Features
+## 🚀 Features
 
 - Store multiple GitHub profiles in a JSON configuration file.
 - Show the currently active profile and the available ones.
 - Switch profiles with a simple command.
 - Protect specific repositories so they can only be used with the right profile.
 
-## Installation
+## 📦 Installation
 
 ```bash
 pip install -e .
 ```
 
-## Usage
+## ▶️ Usage
 
 Run the interactive menu:
 
@@ -68,3 +68,28 @@ Then you can run:
 ```bash
 git my-user
 ```
+
+## 🔒 Validate Git commands before every run
+
+If you want to validate the active profile before any `git` command, add a lightweight wrapper around the real Git executable.
+
+### 🪟 Windows PowerShell
+
+```powershell
+function git {
+    git-my-user
+    & git.exe @args
+}
+```
+
+This runs `git-my-user` first and only then forwards the original arguments to `git.exe`.
+
+### 🐧 Linux / macOS shell
+
+```bash
+function git() {
+    git-my-user && command git "$@"
+}
+```
+
+This makes `git status`, `git commit`, `git push` and every other `git ...` command validate the active profile first.

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import textwrap
 from pathlib import Path
 
 from github_user_changeable.config import (
+    RepositoryPolicyError,
     add_profile,
     add_repo_policy,
     ensure_repo_policy,
@@ -42,6 +44,23 @@ def switch_profile(
     return profile
 
 
+def format_repo_policy_error(repo_path: Path, required_profile: str, active_profile: str) -> str:
+    message = (
+        f"⚠️ Active profile '{active_profile}' is blocked by repository policy: "
+        f"Repository {repo_path} is restricted to profile '{required_profile}', "
+        f"but active profile is '{active_profile}'."
+    )
+    wrapped_lines = textwrap.wrap(message, width=82)
+    width = max(len(line) for line in wrapped_lines)
+    top = "─" * (width + 2)
+    bottom = "─" * (width + 2)
+    body = []
+    for line in wrapped_lines:
+        highlighted = line.replace("blocked", "\x1b[31mblocked\x1b[0m")
+        body.append(f" {highlighted.ljust(width)} ")
+    return "\n".join([top, *body, bottom])
+
+
 def apply_active_profile_to_current_repo(*, config_path: Path | None = None) -> None:
     config = load_config(config_path)
     profile_name = config.get("active_profile")
@@ -50,10 +69,9 @@ def apply_active_profile_to_current_repo(*, config_path: Path | None = None) -> 
 
     try:
         ensure_repo_policy(Path.cwd(), config_path=config_path)
-    except PermissionError as exc:
-        raise SystemExit(
-            f"Active profile '{profile_name}' is blocked by repository policy: {exc}"
-        )
+    except RepositoryPolicyError as exc:
+        print(format_repo_policy_error(exc.repo_path, exc.required_profile, exc.active_profile))
+        raise SystemExit(1)
 
 
 def build_parser() -> argparse.ArgumentParser:

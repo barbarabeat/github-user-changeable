@@ -9,6 +9,22 @@ from typing import Any, Dict, Optional
 DEFAULT_CONFIG_PATH = Path.home() / ".github-user-changeable.json"
 
 
+class RepositoryPolicyError(PermissionError):
+    def __init__(
+        self,
+        repo_path: Path,
+        required_profile: str,
+        active_profile: str,
+    ) -> None:
+        self.repo_path = repo_path
+        self.required_profile = required_profile
+        self.active_profile = active_profile
+        super().__init__(
+            f"Repository {repo_path} is restricted to profile '{required_profile}', "
+            f"but active profile is '{active_profile}'."
+        )
+
+
 def load_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
     """Load the CLI configuration from disk."""
     path = config_path or DEFAULT_CONFIG_PATH
@@ -101,7 +117,4 @@ def ensure_repo_policy(repo_path: Path, config_path: Optional[Path] = None) -> N
 
     required_profile = policies.get(normalized_path)
     if required_profile and active_profile != required_profile:
-        raise PermissionError(
-            f"Repository {repo_path} is restricted to profile '{required_profile}', "
-            f"but active profile is '{active_profile}'."
-        )
+        raise RepositoryPolicyError(repo_path, required_profile, active_profile)
