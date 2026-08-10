@@ -108,6 +108,18 @@ def add_repo_policy(repo_path: Path, profile_name: str, config_path: Optional[Pa
     return {"repo_path": normalized_path, "profile_name": profile_name}
 
 
+def remove_repo_policy(repo_path: Path, config_path: Optional[Path] = None) -> Optional[Dict[str, str]]:
+    """Remove a repository policy if it exists."""
+    config = load_config(config_path)
+    policies = config.setdefault("repo_policies", {})
+    normalized_path = str(repo_path.resolve())
+    removed_profile = policies.pop(normalized_path, None)
+    if removed_profile is None:
+        return None
+    save_config(config, config_path)
+    return {"repo_path": normalized_path, "profile_name": removed_profile}
+
+
 def ensure_repo_policy(repo_path: Path, config_path: Optional[Path] = None) -> None:
     """Raise an error if the active profile is not allowed to use the given repository."""
     config = load_config(config_path)

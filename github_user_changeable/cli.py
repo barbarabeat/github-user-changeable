@@ -10,6 +10,7 @@ from github_user_changeable.config import (
     RepositoryPolicyError,
     add_profile,
     add_repo_policy,
+    remove_repo_policy,
     ensure_repo_policy,
     get_active_profile,
     list_profiles,
@@ -84,6 +85,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--name", dest="profile_name_value", help="Display name for the new profile")
     parser.add_argument("--email", dest="profile_email", help="Email for the new profile")
     parser.add_argument("--add-policy", dest="repo_policy_path", help="Protect a repository with a required profile")
+    parser.add_argument("--remove-policy", dest="remove_repo_policy_path", help="Remove a repository policy")
     parser.add_argument("--policy-profile", dest="policy_profile_name", help="Profile required by the repository policy")
     parser.add_argument("--list-policies", action="store_true", help="List saved repository policies")
     parser.add_argument("--config", dest="config_path", help="Path to the config file")
@@ -143,9 +145,17 @@ def main() -> int:
         print(f"Added policy for {args.repo_policy_path} -> {args.policy_profile_name}.")
         return 0
 
-    if not any([args.switch_profile_name, args.list_profiles, args.add_profile_name, args.repo_policy_path, args.list_policies]):
+    if args.remove_repo_policy_path:
+        removed = remove_repo_policy(Path(args.remove_repo_policy_path).expanduser(), config_path=config_path)
+        if removed is None:
+            print(f"No repository policy found for {args.remove_repo_policy_path}.")
+            return 0
+        print(f"Removed policy for {removed['repo_path']} -> {removed['profile_name']}.")
+        return 0
+
+    if not any([args.switch_profile_name, args.list_profiles, args.add_profile_name, args.repo_policy_path, args.remove_repo_policy_path, args.list_policies]):
         apply_active_profile_to_current_repo(config_path=config_path)
-        options = ["Show current profile", "List profiles", "Switch profile", "Add profile", "Add repo policy", "List repo policies"]
+        options = ["Show current profile", "List profiles", "Switch profile", "Add profile", "Add repo policy", "Remove repo policy", "List repo policies"]
         selection = prompt_menu(options)
 
         if selection == "Show current profile":
@@ -184,6 +194,15 @@ def main() -> int:
             profile_name = input("Required profile: ").strip()
             add_repo_policy(Path(repo_path).expanduser(), profile_name, config_path=config_path)
             print(f"Added policy for {repo_path} -> {profile_name}.")
+            return 0
+
+        if selection == "Remove repo policy":
+            repo_path = input("Repository path: ").strip()
+            removed = remove_repo_policy(Path(repo_path).expanduser(), config_path=config_path)
+            if removed is None:
+                print(f"No repository policy found for {repo_path}.")
+            else:
+                print(f"Removed policy for {removed['repo_path']} -> {removed['profile_name']}.")
             return 0
 
         if selection == "List repo policies":

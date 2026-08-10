@@ -57,6 +57,12 @@ To protect a repository:
 git-my-user --add-policy /path/to/repo work
 ```
 
+To remove a repository policy:
+
+```bash
+git-my-user --remove-policy /path/to/repo
+```
+
 If you want Git to expose it as a Git alias:
 
 ```bash

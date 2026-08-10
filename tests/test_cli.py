@@ -11,10 +11,10 @@ from github_user_changeable.config import (
     add_profile,
     add_repo_policy,
     ensure_repo_policy,
-    get_active_profile,
     list_profiles,
     list_repo_policies,
     load_config,
+    remove_repo_policy,
 )
 from github_user_changeable.git_ops import apply_profile_to_git
 from github_user_changeable.ui import prompt_menu
@@ -142,6 +142,30 @@ def test_list_repo_policies_returns_recorded_policies(tmp_path: Path) -> None:
     policies = list_repo_policies(config_path=config_path)
 
     assert policies == [{"repo_path": str(repo_path.resolve()), "profile_name": "work"}]
+
+
+def test_remove_repo_policy_deletes_recorded_policy(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.json"
+    repo_path = tmp_path / "company-repo"
+    repo_path.mkdir()
+    write_config(config_path, default_config(active_profile="personal", repo_policies={str(repo_path): "work"}))
+
+    removed = remove_repo_policy(repo_path, config_path=config_path)
+    config = load_config(config_path)
+
+    assert removed == {"repo_path": str(repo_path.resolve()), "profile_name": "work"}
+    assert str(repo_path.resolve()) not in config["repo_policies"]
+
+
+def test_remove_repo_policy_returns_none_when_missing(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.json"
+    repo_path = tmp_path / "company-repo"
+    repo_path.mkdir()
+    write_config(config_path, default_config(active_profile="personal"))
+
+    removed = remove_repo_policy(repo_path, config_path=config_path)
+
+    assert removed is None
 
 
 def test_apply_profile_to_git_sets_local_identity(tmp_path: Path) -> None:
