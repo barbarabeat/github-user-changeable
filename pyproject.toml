@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "github-user-changeable"
+version = "0.1.0"
+description = "Switch GitHub identities safely and enforce repository-specific protections."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+git-my-user = "github_user_changeable.cli:main"
+
+[tool.setuptools]
+packages = ["github_user_changeable"]
